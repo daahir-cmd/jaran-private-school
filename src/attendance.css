@@ -1,0 +1,220 @@
+.attendance-list-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: #fff;
+  border-radius: 4px;
+  padding: 7px;
+  margin-bottom: 8px;
+}
+.attendance-list-toolbar select,
+.attendance-entry-controls input,
+.attendance-entry-controls select {
+  min-width: 0;
+  height: 40px;
+  border: 1px solid #68bdb4;
+  border-radius: 4px;
+  background: #fff;
+  padding: 6px 9px;
+  color: #333;
+  font: inherit;
+  font-weight: 700;
+}
+.attendance-list-toolbar select {
+  flex: 1;
+}
+.attendance-history {
+  display: grid;
+  gap: 7px;
+}
+.attendance-session-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+  padding: 7px 10px;
+  border-radius: 4px;
+  background: #fff;
+  box-shadow: 0 1px 3px #5553;
+}
+.attendance-session-date {
+  display: grid;
+  gap: 5px;
+  min-width: 122px;
+  color: #666;
+}
+.attendance-session-date b {
+  font-size: 15px;
+}
+.attendance-session-date small {
+  font-size: 11px;
+}
+.attendance-session-actions {
+  display: flex;
+  flex: 1;
+  justify-content: space-around;
+}
+.attendance-session-actions button {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  min-width: 48px;
+  border: 0;
+  background: transparent;
+  color: #00897b;
+}
+.attendance-session-actions i {
+  font-size: 21px;
+  font-style: normal;
+}
+.attendance-session-actions small {
+  color: #666;
+  font-size: 10px;
+}
+.attendance-entry-controls {
+  display: grid;
+  grid-template-columns: minmax(105px, 1fr) 82px 42px minmax(115px, 1.25fr) auto;
+  grid-template-areas:
+    "date lecture mark sort save"
+    "type type remarks remarks remarks";
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 9px;
+  padding: 9px;
+  border-radius: 4px;
+  background: #fff;
+  box-shadow: 0 1px 3px #5553;
+}
+.attendance-entry-controls>label {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  color: #555;
+  font-size: 12px;
+  font-weight: 700;
+}
+.attendance-entry-controls>label:nth-of-type(1) { grid-area: date; }
+.attendance-entry-controls>label:nth-of-type(2) { grid-area: lecture; }
+.attendance-entry-controls>label:nth-of-type(3) { grid-area: sort; }
+.attendance-entry-controls>label:nth-of-type(4) { grid-area: type; }
+.attendance-entry-controls .attendance-remarks {
+  grid-area: remarks;
+}
+.attendance-mark-all {
+  grid-area: mark;
+  height: 40px;
+  border: 0;
+  border-radius: 3px;
+  background: #ed171b;
+  color: #fff;
+  font-size: 20px;
+  font-weight: 800;
+}
+.attendance-entry-controls>[data-save-att] {
+  grid-area: save;
+  white-space: nowrap;
+}
+.attendance-entry-controls>label:nth-of-type(4) select {
+  color: #333;
+  background: #f5f5f5;
+}
+.attendance-entry-list {
+  display: grid;
+  gap: 7px;
+}
+.attendance-entry-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 86px;
+  padding: 5px;
+  border: 4px solid #fff;
+  border-radius: 5px;
+  box-shadow: 0 1px 3px #5554;
+}
+.attendance-entry-row.status-absent { background: #f8adad; }
+.attendance-entry-row.status-present { background: #acd9b5; }
+.attendance-entry-row.status-late { background: #f4d18a; }
+.attendance-entry-row .student-avatar {
+  width: 60px;
+  height: 68px;
+  flex: none;
+  border: 2px solid #444;
+  border-radius: 4px;
+  background: #f5e5bf;
+  color: #333;
+  font-size: 25px;
+}
+.attendance-student-info {
+  display: grid;
+  flex: 1;
+  gap: 5px;
+  min-width: 0;
+  color: #555;
+}
+.attendance-student-info>b {
+  overflow: hidden;
+  font-size: 15px;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.attendance-student-info small {
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+.attendance-entry-status {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 2px;
+  width: 68px;
+  min-height: 66px;
+  flex: none;
+  border: 0;
+  border-radius: 2px;
+  color: #fff;
+}
+.status-absent .attendance-entry-status { background: #ed171b; }
+.status-present .attendance-entry-status { background: #008f55; }
+.status-late .attendance-entry-status { background: #b97800; }
+.attendance-entry-status>b {
+  font-size: 22px;
+}
+.attendance-entry-status>small {
+  font-size: 9px;
+  font-weight: 800;
+}
+@media(max-width:650px) {
+  .attendance-entry-controls {
+    grid-template-columns: minmax(100px, 1fr) 74px 40px minmax(90px, 1fr);
+    grid-template-areas:
+      "date date lecture mark"
+      "sort sort save save"
+      "type type type type"
+      "remarks remarks remarks remarks";
+  }
+  .attendance-entry-controls .attendance-remarks {
+    width: 100%;
+  }
+  .attendance-entry-row {
+    min-height: 78px;
+  }
+  .attendance-entry-row .student-avatar {
+    width: 54px;
+    height: 64px;
+  }
+  .attendance-student-info>b {
+    font-size: 12px;
+  }
+  .attendance-student-info small {
+    font-size: 9px;
+  }
+  .attendance-entry-status {
+    width: 58px;
+    min-height: 62px;
+  }
+}
