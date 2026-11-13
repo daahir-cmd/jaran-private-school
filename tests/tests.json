@@ -91,11 +91,12 @@
     ],
     "description": "Saves names in uppercase and exports the student roster as a WPS-compatible Excel workbook.",
     "steps": [
-      "Add a student using a mixed-case name while leaving guardian and phone fields empty",
-      "Save the student and use Download Excel from the roster",
+      "Add a student and parent using mixed-case names, and set Date of Admission",
+      "Add another student while leaving guardian and phone fields empty, then save",
+      "Use Download Excel from the roster",
       "Use Download Students from Classes to export all classes and open the workbook in WPS Office"
     ],
-    "expected": "The student saves without guardian or phone details and keeps the auto-generated registration number. XLSX downloads open in WPS with bold column headers and widths that show each header and cell value without clipping."
+    "expected": "The first student's name and parent name are saved in uppercase; the second student saves without guardian or phone details and keeps the auto-generated registration number. XLSX downloads open in WPS with bold column headers and widths that show each header and cell value without clipping."
   },
   {
     "name": "Back up and restore the school database",
