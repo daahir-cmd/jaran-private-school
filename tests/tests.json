@@ -1,0 +1,114 @@
+[
+  {
+    "name": "Create a class and manage its student roster",
+    "sanity": true,
+    "viewport": "desktop",
+    "covers": [
+      "class creation",
+      "class editing",
+      "class deletion",
+      "student add/edit/delete",
+      "LocalStorage persistence"
+    ],
+    "description": "Verifies a class and student roster can be created, changed, and retained.",
+    "steps": [
+      "Add class CLASS 8AAD with a teacher and dates",
+      "Open its Students list and add a student named Amina",
+      "Edit the student and refresh the page"
+    ],
+    "expected": "The class and edited student remain visible after refresh."
+  },
+  {
+    "name": "Record attendance and manage session history",
+    "viewport": "mobile",
+    "covers": [
+      "attendance history with descending dates",
+      "Add Att entry form",
+      "attendance date and lecture",
+      "Absent default status",
+      "Present, Absent, and Late status cycling",
+      "remarks persistence",
+      "session edit, copy, and delete",
+      "daily attendance",
+      "attendance persistence"
+    ],
+    "description": "Uses the attendance history and entry screens to create and manage daily records.",
+    "steps": [
+      "Create a class and add two students",
+      "Open the class Attendance page and press Add Att",
+      "Check the students start as Absent, change one to Present and one to Late, enter a remark, and Save",
+      "Refresh the page"
+    ],
+    "expected": "The new record appears at the top with date, lecture, and attendance count. Edit retains the statuses and remark; Copy opens a new date with copied statuses; Delete removes the record after confirmation."
+  },
+  {
+    "name": "Financial lists only created classes and supports manual Paid marking",
+    "viewport": "desktop",
+    "covers": [
+      "financial class filter",
+      "class student roster",
+      "manual payment marking",
+      "PAID indicator",
+      "financial LocalStorage persistence"
+    ],
+    "description": "Checks Financial is class scoped and lets the user manually mark a class member as paid.",
+    "steps": [
+      "Create a class and add two students",
+      "Open Financial and select that class",
+      "Mark one student paid and refresh"
+    ],
+    "expected": "Financial shows the selected class roster, displays PAID beside the marked student, and keeps the other student unpaid."
+  },
+  {
+    "name": "Generate filtered attendance register and report",
+    "viewport": "desktop",
+    "covers": [
+      "attendance date range filter",
+      "attendance percentage filter",
+      "checkbox ordering by name, registration number, or attendance",
+      "late attendance weighted at half a day",
+      "attendance register XLSX",
+      "attendance summary XLSX"
+    ],
+    "description": "Uses a date range and report options to generate Excel attendance files.",
+    "steps": [
+      "Create a class with students and record five attendance days, including three Present, one Late, and one Absent for a student",
+      "Open Class Reports, choose the class, select the inclusive date range, and choose Attendance % with ascending order",
+      "Download the register and summary, then open both files in WPS Office"
+    ],
+    "expected": "Both XLSX files open in WPS. The student with three Present, one Late, and one Absent has 70%; a student with three Present and two Absent has 60%. Days without a saved register are excluded."
+  },
+  {
+    "name": "Capitalize and export student roster",
+    "viewport": "desktop",
+    "covers": [
+      "uppercase student and parent names",
+      "whole-school student XLSX export",
+      "class roster XLSX export"
+    ],
+    "description": "Saves names in uppercase and exports the student roster as a WPS-compatible Excel workbook.",
+    "steps": [
+      "Add a student and parent using mixed-case names, and set Date of Admission",
+      "Save the student and use Download Excel from the roster",
+      "Use Download Students from Classes to export all classes"
+    ],
+    "expected": "Saved student and parent names are uppercase. Both XLSX downloads open in WPS and contain the expected student, registration, admission date, parent, phone, and fee columns."
+  },
+  {
+    "name": "Back up and restore the school database",
+    "viewport": "mobile",
+    "covers": [
+      "full database JSON export",
+      "class student payment attendance restore",
+      "restore confirmation",
+      "invalid backup handling"
+    ],
+    "description": "Verifies the complete local school database can be exported and restored.",
+    "steps": [
+      "Create a class, a student, an attendance mark, and a Paid mark",
+      "Export a backup from Backup / Restore",
+      "Restore the backup and confirm replacement"
+    ],
+    "expected": "The restored database retains the class, roster, attendance, and PAID label."
+  }
+]
