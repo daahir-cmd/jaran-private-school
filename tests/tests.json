@@ -68,7 +68,7 @@
       "checkbox ordering by name, registration number, or attendance",
       "late attendance weighted at half a day",
       "attendance register XLSX",
-      "attendance summary XLSX"
+      "attendance summary XLSX with only student name and attendance percentage"
     ],
     "description": "Uses a date range and report options to generate Excel attendance files.",
     "steps": [
@@ -76,7 +76,7 @@
       "Open Class Reports, choose the class, select the inclusive date range, and choose Attendance % with ascending order",
       "Download the register and summary, then open both files in WPS Office"
     ],
-    "expected": "Both XLSX files open in WPS. The student with three Present, one Late, and one Absent has 70%; a student with three Present and two Absent has 60%. Days without a saved register are excluded."
+    "expected": "Both XLSX files open in WPS. The summary contains exactly Student Name and Attendance % columns and one row per selected student, with no class, date, registration, gender, or day-count fields. The register keeps its daily attendance details. The student with three Present, one Late, and one Absent has 70%; a student with three Present and two Absent has 60%. Days without a saved register are excluded."
   },
   {
     "name": "Capitalize and export student roster",
