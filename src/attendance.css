@@ -107,7 +107,7 @@
   height: 40px;
   border: 0;
   border-radius: 3px;
-  background: #ed171b;
+  background: #1976d2;
   color: #fff;
   font-size: 20px;
   font-weight: 800;
@@ -178,7 +178,7 @@
   border-radius: 2px;
   color: #fff;
 }
-.status-absent .attendance-entry-status { background: #ed171b; }
+.status-absent .attendance-entry-status { background: #1976d2; }
 .status-present .attendance-entry-status { background: #008f55; }
 .status-late .attendance-entry-status { background: #b97800; }
 .attendance-entry-status>b {
@@ -222,7 +222,7 @@
 .attendance-list-toolbar,
 .attendance-session-card,
 .attendance-entry-controls {
-  background: #b71c1c;
+  background: #1565c0;
   color: #fff;
 }
 .attendance-list-toolbar select,
@@ -242,13 +242,13 @@
   color: #fff;
 }
 .attendance-entry-row.status-absent {
-  background: #d32f2f;
+  background: #1976d2;
 }
 .attendance-entry-row.status-present {
   background: #36454f;
 }
 .attendance-entry-row.status-late {
-  background: #b71c1c;
+  background: #1565c0;
 }
 .attendance-entry-row .student-avatar {
   background: #28343a;
@@ -262,4 +262,7 @@
 .attendance-mark-all {
   background: #36454f;
   color: #fff;
+}
+.status-absent .attendance-entry-status {
+  background: #1976d2;
 }
