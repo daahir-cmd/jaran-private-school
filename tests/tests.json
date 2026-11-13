@@ -7,16 +7,19 @@
       "class creation",
       "class editing",
       "class deletion",
+      "More menu closes when tapping outside",
+      "More menu charcoal trigger and red menu with white text",
       "student add/edit/delete",
       "LocalStorage persistence"
     ],
     "description": "Verifies a class and student roster can be created, changed, and retained.",
     "steps": [
       "Add class CLASS 8AAD with a teacher and dates",
+      "Open More on the class card, verify its charcoal button and red menu with white text, then tap outside the menu",
       "Open its Students list and add a student named Amina",
       "Edit the student and refresh the page"
     ],
-    "expected": "The class and edited student remain visible after refresh."
+    "expected": "The More menu closes on an outside tap. The menu trigger is charcoal, and the menu has a red background with white text. The class and edited student remain visible after refresh."
   },
   {
     "name": "Record attendance and manage session history",
