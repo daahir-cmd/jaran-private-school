@@ -741,3 +741,188 @@ body{font-family:Arial,Helvetica,sans-serif;background:#d3d3d3;color:#555}
 .student-card{display:flex;align-items:center;gap:10px;padding:8px}.portrait{width:76px;height:80px;flex:none;border:2px solid #444;font-size:35px;background:#f5e5bf}.student-info{min-width:0;flex:1}.student-info h2{font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.student-meta{font-size:11px;color:#666;margin:9px 0}.student-actions{display:flex;justify-content:space-between}.student-actions button,.student-actions a{font-size:22px;min-width:35px}.student-actions small{font-size:10px;color:#666}
 .form-panel,.backup-box{background:white;border:1px solid #eee;border-radius:4px;padding:16px;margin:8px 0;box-shadow:0 1px 4px #5553}.form-panel label{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin:8px 0;font-weight:bold;font-size:13px}.form-panel input,.form-panel select{width:55%;border:1px solid #ddd;border-radius:3px;padding:10px;color:#555;font-size:14px}.report-form{max-width:560px;margin:12px auto}.report-form label{justify-content:space-between}.report-form input,.report-form select{width:45%}.report-buttons{display:flex;gap:10px;justify-content:center;margin:14px 0}.report-buttons button{max-width:180px;line-height:1.3}.warning{color:#c34d62;font-weight:bold}.report-result{background:#fff;margin:10px 0;padding:12px}.report-result h2{color:#00897b;font-size:16px}.report-result p{font-size:12px}.backup-box{min-height:calc(100vh - 180px);padding:15px}.backup-box h2{font-size:16px;color:#498c70}.backup-box li{line-height:1.8}.danger-text{color:#c62828}.backup-tools .teal-btn{flex:1;min-height:55px}.mobile-nav{display:none}.status-counts{display:flex;gap:6px;justify-content:space-around;background:white;padding:10px;font-size:11px}.status-counts b{color:#00897b}.att-session{display:flex;align-items:center;justify-content:space-around}.att-date-title{flex:1;font-size:16px}.att-date-title small{font-size:10px;display:block}.att-session button{font-size:10px;min-width:45px}.att-row{display:flex;align-items:center;gap:10px;padding:8px}.att-row>b{flex:1;font-size:13px}.status-select{display:flex;gap:5px}.status-select button{border:1px solid #aaa;background:white;border-radius:50%;width:30px;height:30px;color:#555}.status-select button.chosen{background:#00897b;color:white;border-color:#00897b}.table-scroll{overflow:auto;background:white;padding:8px}.timetable{width:100%;border-collapse:collapse}.timetable td,.timetable th{border:1px solid #ddd;padding:5px}.timetable input{width:100%;min-width:85px;border:0;padding:7px}.table-scroll>.teal-btn{margin:10px}.editor-dialog{border:0;border-radius:4px;padding:0;width:min(440px,calc(100% - 24px));box-shadow:0 8px 35px #2226}.editor-dialog::backdrop{background:#2228}.editor-form{padding:17px;background:#fff}.dialog-head{display:flex;justify-content:space-between;align-items:center}.dialog-head h2{font-size:18px;color:#00897b}.close{border:0;background:none;font-size:24px;color:#777}.editor-form label{display:grid;grid-template-columns:38% 1fr;align-items:center;gap:8px;margin:12px 0;font-size:13px;font-weight:bold}.editor-form input,.editor-form select{width:100%;border:1px solid #ddd;border-radius:3px;padding:11px;font-size:14px}.editor-form>.teal-btn{display:block;margin:16px 0 0 auto;min-width:110px}#toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);background:#333;color:white;padding:10px 15px;border-radius:3px;opacity:0;pointer-events:none;z-index:10}#toast.show{opacity:1}
 @media(max-width:650px){.screen{padding:5px 6px 84px}.top{height:36px}.screen h1{font-size:16px}.class-actions button{min-width:43px}.student-card{gap:7px}.portrait{width:62px;height:74px}.student-info h2{font-size:15px}.student-actions button,.student-actions a{min-width:30px;font-size:19px}.student-actions small{font-size:9px}.student-meta{font-size:10px}.toolbar{flex-wrap:wrap}.toolbar .teal-btn{margin-left:auto}.mobile-nav{display:flex;position:fixed;z-index:4;bottom:0;left:0;right:0;background:#008f83;justify-content:space-around;padding:5px 2px calc(5px + env(safe-area-inset-bottom));box-shadow:0 -1px 4px #5554}.mobile-nav button{border:0;background:transparent;color:#d8f3ee;display:grid;justify-items:center;gap:2px;font-size:18px;flex:1}.mobile-nav button.on{color:white}.mobile-nav small{font-size:8px;white-space:nowrap}.report-form{padding:12px}.report-form label{font-size:12px}.report-form input,.report-form select{width:52%}.att-session{flex-wrap:wrap;gap:5px}.att-date-title{flex-basis:100%;padding-bottom:5px}.status-counts{font-size:9px}.backup-box{min-height:calc(100vh - 174px)}}
+
+/* School-wide charcoal, red, and white palette */
+:root {
+  --teal: #36454f;
+  --teal-dark: #28343a;
+  --green: #36454f;
+  --deep: #28343a;
+  --line: #b71c1c;
+}
+html,
+body,
+#app,
+main,
+.screen {
+  background: #d32f2f;
+  color: #fff;
+}
+#app * {
+  color: #fff;
+}
+.class-actions button[data-more],
+.class-actions button[data-more] i,
+.top-profile,
+.teal-btn,
+.dash-menu button,
+.more-menu button {
+  color: #fff;
+}
+.menu,
+.top,
+.mobile-nav {
+  background: #36454f;
+  color: #fff;
+}
+.top-profile,
+.teal-btn,
+.dash-menu button {
+  background: #36454f;
+  color: #fff;
+}
+.teal-btn:hover,
+.dash-menu button:hover {
+  background: #28343a;
+}
+.screen h1,
+.class-top h2,
+.student-info h2,
+.counts,
+.financial-class,
+.report-result h2,
+.dialog-head h2,
+.backup-box h2,
+.status-counts b,
+.link-back,
+.class-actions button i,
+.student-actions button,
+.student-actions a,
+.attendance-session-actions button,
+.attendance-actions button,
+.bottom-item.selected {
+  color: #fff;
+}
+.hint,
+.class-top small,
+.student-meta,
+.student-actions small,
+.paid-name small,
+.financial-class span,
+.att-session small,
+.att-row,
+.paid-name b,
+.form-panel label,
+.editor-form label,
+.report-result p {
+  color: #fff;
+}
+.toolbar,
+.count-chip,
+.class-card,
+.student-card,
+.att-session,
+.att-row,
+.paid-row,
+.financial-class,
+.empty-state,
+.form-panel,
+.backup-box,
+.report-result,
+.status-counts,
+.table-scroll,
+.table-wrap,
+.attendance-list-toolbar,
+.attendance-session-card,
+.attendance-entry-controls,
+.panel,
+.stat-card {
+  background: #b71c1c;
+  color: #fff;
+  border-color: #8e1717;
+}
+.class-card,
+.student-card,
+.att-session,
+.att-row,
+.paid-row,
+.financial-class,
+.form-panel,
+.backup-box,
+.table-scroll,
+.table-wrap,
+.attendance-session-card,
+.attendance-entry-controls,
+.panel,
+.stat-card,
+.toolbar {
+  box-shadow: 0 1px 4px #36454f66;
+}
+.more-menu,
+.more-menu button {
+  background: #d32f2f;
+  color: #fff;
+}
+.more-menu button:hover {
+  background: #b71c1c;
+}
+.filter-input,
+.toolbar input,
+.toolbar select,
+.form-panel input,
+.form-panel select,
+.editor-form input,
+.editor-form select,
+.attendance-list-toolbar select,
+.attendance-entry-controls input,
+.attendance-entry-controls select,
+.timetable input {
+  background: #36454f;
+  border-color: #53636d;
+  color: #fff;
+}
+.filter-input::placeholder,
+.attendance-entry-controls input::placeholder,
+#app input::placeholder {
+  color: #d9e0e3;
+  opacity: 1;
+}
+.timetable th,
+.timetable td {
+  background: #b71c1c;
+  border-color: #8e1717;
+  color: #fff;
+}
+.student-avatar,
+.portrait,
+.avatar,
+.profile-big,
+.top-profile,
+.paid-badge,
+.backup-icon,
+.placeholder-icon,
+.stat-icon.green {
+  background: #36454f;
+  color: #fff;
+  border-color: #53636d;
+}
+.complete,
+.partial,
+.pending {
+  background: #36454f;
+  color: #fff;
+}
+.editor-dialog,
+.editor-form,
+.dialog-head,
+.close {
+  background: #b71c1c;
+  color: #fff;
+}
+.editor-dialog::backdrop {
+  background: #1b242acc;
+}
+#toast {
+  background: #36454f;
+  color: #fff;
+}

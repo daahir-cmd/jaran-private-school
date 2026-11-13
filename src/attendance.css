@@ -218,3 +218,48 @@
     min-height: 62px;
   }
 }
+
+.attendance-list-toolbar,
+.attendance-session-card,
+.attendance-entry-controls {
+  background: #b71c1c;
+  color: #fff;
+}
+.attendance-list-toolbar select,
+.attendance-entry-controls input,
+.attendance-entry-controls select {
+  background: #36454f;
+  border-color: #53636d;
+  color: #fff;
+}
+.attendance-session-date,
+.attendance-session-actions small,
+.attendance-entry-controls > label,
+.attendance-student-info {
+  color: #fff;
+}
+.attendance-session-actions button {
+  color: #fff;
+}
+.attendance-entry-row.status-absent {
+  background: #d32f2f;
+}
+.attendance-entry-row.status-present {
+  background: #36454f;
+}
+.attendance-entry-row.status-late {
+  background: #b71c1c;
+}
+.attendance-entry-row .student-avatar {
+  background: #28343a;
+  color: #fff;
+  border-color: #fff;
+}
+.status-present .attendance-entry-status,
+.status-late .attendance-entry-status {
+  background: #36454f;
+}
+.attendance-mark-all {
+  background: #36454f;
+  color: #fff;
+}
