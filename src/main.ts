@@ -15,6 +15,13 @@ let active=location.hash.slice(1)||'dashboard', selectedClass='', menuClass='', 
 let filterText='', attendanceDate=new Date().toISOString().slice(0,10), reportFrom='', reportTo='', reportMin=0, reportMax=100, reportOrder='Name', reportDirection='Ascending';
 let attendanceMode:'list'|'take'='list', attendanceEditingId='', attendanceDraftDate=attendanceDate, attendanceDraftLecture=1, attendanceDraftRemarks='', attendanceDraftMarks:Record<string,AttendanceStatus>={}, attendanceDirection='DESC', attendanceStudentSort='Name';
 const app=document.querySelector<HTMLDivElement>('#app')!;
+app.addEventListener('click',event=>{
+ if(!menuClass)return;
+ const target=event.target;
+ if(!(target instanceof Element)||target.closest('[data-more]'))return;
+ menuClass='';
+ render();
+});
 const menus=[['dashboard','Faculty Dashboard','⌂'],['classes','Classes','♧'],['timetable','Time Table','▦'],['attendance','Attendance Reports','◷'],['reports','Class Reports','▤'],['financial','Financial','＄'],['profile','Profile','●'],['backup','Backup / Restore','⇅']];
 const esc=(s:string)=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
 const persist=()=>localStorage.setItem(KEY,JSON.stringify(data));
