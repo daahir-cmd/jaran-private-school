@@ -142,13 +142,6 @@ function exportStudents(classId?:string){
  const filename=classId?((cls(classId)?.name||'class').replace(/[^\w-]+/g,'-')+'-students.xlsx'):'school-students.xlsx';
  downloadXlsx(filename,[{name:'Students',rows}]);
 }
-function attendanceSummaryRow(s:Student,sessions:Attendance[]):(string|number|null)[]{
- const present=sessions.filter(x=>x.marks[s.id]==='Present').length;
- const late=sessions.filter(x=>x.marks[s.id]==='Late').length;
- const absent=sessions.length-present-late;
- const percent=attendancePercent(s,sessions);
- return [s.reg,s.name,s.gender,s.admissionDate||'',present,late,absent,present+late/2,sessions.length,percent===null?'No data':percent+'%'];
-}
 function downloadAttendanceReport(c:SchoolClass,students:Student[],sessions:Attendance[],type:string){
  const range=reportFrom+'-to-'+reportTo;
  const className=c.name.replace(/[^\w-]+/g,'-');
@@ -158,7 +151,7 @@ function downloadAttendanceReport(c:SchoolClass,students:Student[],sessions:Atte
   downloadXlsx(className+'-attendance-register-'+range+'.xlsx',[{name:'Daily Register',rows}]);
   return;
  }
- const rows:(string|number|null)[][]=[['CLASS',c.name],['DATE RANGE',formatAttendanceDate(reportFrom)+' to '+formatAttendanceDate(reportTo)],[],['REGISTRATION NUMBER','STUDENT NAME','GENDER','DATE OF ADMISSION','PRESENT DAYS','LATE DAYS','ABSENT DAYS','EQUIVALENT ATTENDED DAYS','RECORDED DAYS','ATTENDANCE %'],...students.map(s=>attendanceSummaryRow(s,sessions))];
+ const rows:(string|number|null)[][]=[['STUDENT NAME','ATTENDANCE %'],...students.map(s=>[s.name,attendancePercent(s,sessions)===null?'No data':attendancePercent(s,sessions)+'%'])];
  downloadXlsx(className+'-attendance-summary-'+range+'.xlsx',[{name:'Attendance Summary',rows}]);
 }
 function bindCommon(){
