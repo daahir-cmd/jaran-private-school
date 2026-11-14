@@ -8,18 +8,18 @@
       "class editing",
       "class deletion",
       "More menu closes when tapping outside",
-      "More menu charcoal trigger and red menu with white text",
+      "More menu charcoal trigger and blue menu with white text",
       "student add/edit/delete",
       "LocalStorage persistence"
     ],
     "description": "Verifies a class and student roster can be created, changed, and retained.",
     "steps": [
       "Add class CLASS 8AAD with a teacher and dates",
-      "Open More on the class card, verify its charcoal button and red menu with white text, then tap outside the menu",
+      "Open More on the class card, verify its charcoal button and blue menu with white text, then tap outside the menu",
       "Open its Students list and add a student named Amina",
       "Edit the student and refresh the page"
     ],
-    "expected": "The More menu closes on an outside tap. The menu trigger is charcoal, and the menu has a red background with white text. The class and edited student remain visible after refresh."
+    "expected": "The More menu closes on an outside tap. The menu trigger is charcoal, and the menu has a blue background with white text. The class and edited student remain visible after refresh."
   },
   {
     "name": "Record attendance and manage session history",
@@ -30,6 +30,7 @@
       "attendance date and lecture",
       "Absent default status",
       "Present, Absent, and Late status cycling",
+      "Present is green and Absent is red",
       "remarks persistence",
       "session edit, copy, and delete",
       "daily attendance",
@@ -42,7 +43,7 @@
       "Check the students start as Absent, change one to Present and one to Late, enter a remark, and Save",
       "Refresh the page"
     ],
-    "expected": "The new record appears at the top with date, lecture, and attendance count. Edit retains the statuses and remark; Copy opens a new date with copied statuses; Delete removes the record after confirmation."
+    "expected": "Present rows are green and Absent rows are red. The new record appears at the top with date, lecture, and attendance count. Edit retains the statuses and remark; Copy opens a new date with copied statuses; Delete removes the record after confirmation."
   },
   {
     "name": "Financial lists only created classes and supports manual Paid marking",
@@ -116,6 +117,26 @@
       "Export a backup from Backup / Restore",
       "Restore the backup and confirm replacement"
     ],
-    "expected": "The restored database retains the class, roster, attendance, and PAID label."
+    "expected": "The restored database retains the class, roster, attendance, and PAID label. The page warns that backup data is plain text and must be kept private. Malformed files show 'Invalid backup file.' without changing the app."
+  },
+  {
+    "name": "Reject unsafe and malformed backup data",
+    "viewport": "desktop",
+    "covers": [
+      "startup localStorage schema validation",
+      "invalid backup schema rejection",
+      "backup size limit",
+      "student name HTML escaping",
+      "class and student UUID validation",
+      "attendance date and status validation",
+      "Content Security Policy blocks inline scripts"
+    ],
+    "description": "Checks invalid local and restored data cannot break the app or execute HTML/JavaScript.",
+    "steps": [
+      "Try restoring a malformed JSON file and a file larger than 5 MB",
+      "Restore a structurally valid backup containing <img src=x onerror=alert(1)> in a student name, id, date, and attendance status",
+      "Load a malformed school object in localStorage and reload the app"
+    ],
+    "expected": "Malformed or oversized files show 'Invalid backup file.' without changing the current data. Invalid store entries are discarded or rejected, the app falls back to the blank store when needed, and the HTML payload never executes."
   }
 ]
