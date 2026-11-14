@@ -8,9 +8,86 @@ type SchoolClass = { id:string; name:string; teacher:string; start:string; end:s
 type Attendance = { id:string; date:string; lecture:number; description:string; type?:string; marks:Record<string,AttendanceStatus> };
 type Store = { classes:SchoolClass[]; attendance:Record<string,Attendance[]>; profile:{name:string;school:string}; timetable:string[] };
 const KEY='evergreen-school-data-v2';
-const legacy=JSON.parse(localStorage.getItem('evergreen-school-fees-v1')||'[]');
 const blank:Store={classes:[],attendance:{},profile:{name:'Faculty Administrator',school:'JARAN PRIVATE SCHOOL'},timetable:[]};
-let data:Store=(()=>{try{const v=JSON.parse(localStorage.getItem(KEY)||'null');if(v&&Array.isArray(v.classes))return {...blank,...v}}catch{};if(legacy.length){const grouped:Record<string,SchoolClass>={};legacy.forEach((f:any)=>{const n=f.className||'CLASS 8AAD';if(!grouped[n])grouped[n]={id:crypto.randomUUID(),name:n,teacher:'',start:'',end:'',students:[]};grouped[n].students.push({id:crypto.randomUUID(),name:f.student,gender:'',phone:'',reg:'',paid:Number(f.paid)>=Number(f.amount)})});return {...blank,classes:Object.values(grouped)}}return blank})();
+const isRecord=(value:unknown):value is Record<string,unknown>=>typeof value==='object'&&value!==null&&!Array.isArray(value);
+const isPlainObject=(value:unknown):value is Record<string,unknown>=>{
+ if(!isRecord(value))return false;
+ const prototype=Object.getPrototypeOf(value);
+ return prototype===Object.prototype||prototype===null;
+};
+const isSafeKey=(key:string)=>key!=='__proto__'&&key!=='constructor'&&key!=='prototype';
+const isUuid=(value:unknown):value is string=>typeof value==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+const isDate=(value:unknown):value is string=>typeof value==='string'&&(value===''||/^\d{4}-\d{2}-\d{2}$/.test(value));
+const isBoundedString=(value:unknown,max:number):value is string=>typeof value==='string'&&value.length<=max;
+const attendanceStatuses:AttendanceStatus[]=['Present','Absent','Late'];
+const isAttendanceStatus=(value:unknown):value is AttendanceStatus=>attendanceStatuses.some(status=>status===value);
+function sanitizeStore(input:unknown):Store|null{
+ if(!isPlainObject(input)||!Array.isArray(input.classes)||!isPlainObject(input.attendance)||!isPlainObject(input.profile)||!Array.isArray(input.timetable))return null;
+ if(!isBoundedString(input.profile.name,100)||!isBoundedString(input.profile.school,100))return null;
+ if(Object.keys(input.attendance).some(key=>!isSafeKey(key)))return null;
+ const classes:SchoolClass[]=input.classes.flatMap((entry):SchoolClass[]=>{
+  if(!isPlainObject(entry)||!isUuid(entry.id)||!isBoundedString(entry.name,100)||!isBoundedString(entry.teacher,100)||!isDate(entry.start)||!isDate(entry.end)||!Array.isArray(entry.students))return [];
+  const students:Student[]=entry.students.flatMap((value):Student[]=>{
+   if(!isPlainObject(value))return [];
+   const guardianName=value.guardianName===undefined?'':value.guardianName;
+   const guardianPhone=value.guardianPhone===undefined?'':value.guardianPhone;
+   const admissionDate=value.admissionDate===undefined?'':value.admissionDate;
+   if(!isUuid(value.id)||!isBoundedString(value.name,100)||!isBoundedString(value.gender,30)||!isBoundedString(value.phone,40)||!isBoundedString(value.reg,100)||!isBoundedString(guardianName,100)||!isBoundedString(guardianPhone,40)||!isDate(admissionDate)||typeof value.paid!=='boolean')return [];
+   return [{
+    id:value.id,name:value.name,gender:value.gender,phone:value.phone,reg:value.reg,
+    guardianName,guardianPhone,admissionDate,paid:value.paid
+   }];
+  });
+  return [{id:entry.id,name:entry.name,teacher:entry.teacher,start:entry.start,end:entry.end,students}];
+ });
+ const attendance:Record<string,Attendance[]>=Object.create(null);
+ const classIds=new Set(classes.map(entry=>entry.id));
+ for(const [classId,value] of Object.entries(input.attendance)){
+  if(!isSafeKey(classId)||!isUuid(classId)||!classIds.has(classId)||!Array.isArray(value))continue;
+  attendance[classId]=value.flatMap((session):Attendance[]=>{
+   if(!isPlainObject(session)||!isUuid(session.id)||!isDate(session.date)||!session.date||typeof session.lecture!=='number'||!Number.isInteger(session.lecture)||session.lecture<1||!isBoundedString(session.description,2000)||!isPlainObject(session.marks))return [];
+   if(Object.keys(session.marks).some(key=>!isSafeKey(key)))return [];
+   const marks:Record<string,AttendanceStatus>=Object.create(null);
+   for(const [studentId,status] of Object.entries(session.marks)){
+    if(!isUuid(studentId)||!isAttendanceStatus(status))return [];
+    marks[studentId]=status;
+   }
+   const type=session.type;
+   if(type!==undefined&&!isBoundedString(type,40))return [];
+   return [{id:session.id,date:session.date,lecture:session.lecture,description:session.description,type,marks}];
+  });
+ }
+ return {
+  classes,attendance,profile:{name:input.profile.name,school:input.profile.school},
+  timetable:input.timetable.filter((value):value is string=>isBoundedString(value,500))
+ };
+}
+const parseStoredJson=(key:string):unknown=>{
+ try{
+  const value=localStorage.getItem(key);
+  return value?JSON.parse(value) as unknown:null;
+ }catch(error){
+  console.warn('Unable to read stored school data.',error);
+  return null;
+ }
+};
+let data:Store=(()=>{
+ const stored=sanitizeStore(parseStoredJson(KEY));
+ if(stored)return stored;
+ const legacy=parseStoredJson('evergreen-school-fees-v1');
+ if(Array.isArray(legacy)){
+  const grouped=new Map<string,SchoolClass>();
+  legacy.forEach(value=>{
+   if(!isPlainObject(value))return;
+   const name=isBoundedString(value.className,100)&&value.className?value.className:'CLASS 8AAD';
+   if(!isBoundedString(value.student,100))return;
+   if(!grouped.has(name))grouped.set(name,{id:crypto.randomUUID(),name,teacher:'',start:'',end:'',students:[]});
+   grouped.get(name)!.students.push({id:crypto.randomUUID(),name:value.student,gender:'',phone:'',reg:'',paid:Number(value.paid)>=Number(value.amount)});
+  });
+  if(grouped.size)return {...blank,classes:[...grouped.values()]};
+ }
+ return blank;
+})();
 let active=location.hash.slice(1)||'dashboard', selectedClass='', menuClass='', reportClass='';
 let filterText='', attendanceDate=new Date().toISOString().slice(0,10), reportFrom='', reportTo='', reportMin=0, reportMax=100, reportOrder='Name', reportDirection='Ascending';
 let attendanceMode:'list'|'take'='list', attendanceEditingId='', attendanceDraftDate=attendanceDate, attendanceDraftLecture=1, attendanceDraftRemarks='', attendanceDraftMarks:Record<string,AttendanceStatus>={}, attendanceDirection='DESC', attendanceStudentSort='Name';
@@ -23,7 +100,10 @@ app.addEventListener('click',event=>{
  render();
 });
 const menus=[['dashboard','Faculty Dashboard','⌂'],['classes','Classes','♧'],['timetable','Time Table','▦'],['attendance','Attendance Reports','◷'],['reports','Class Reports','▤'],['financial','Financial','＄'],['profile','Profile','●'],['backup','Backup / Restore','⇅']];
-const esc=(s:string)=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
+const esc=(s:unknown)=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
+const safeDateValue=(value:unknown)=>isDate(value)?value:'';
+const safeLectureValue=(value:unknown)=>typeof value==='number'&&Number.isInteger(value)&&value>0?value:1;
+const safeAttendanceStatus=(value:unknown):AttendanceStatus=>isAttendanceStatus(value)?value:'Absent';
 const persist=()=>localStorage.setItem(KEY,JSON.stringify(data));
 const cls=(id:string)=>data.classes.find(c=>c.id===id);
 const go=(page:string)=>{active=page;location.hash=page;render()};
@@ -32,24 +112,24 @@ function menu(){return '<aside class="menu"><b class="menu-brand">JARAN PRIVATE 
 function layout(body:string,crumb:string){app.innerHTML=menu()+'<main>'+top(crumb)+'<section class="screen">'+body+'</section></main><div id="toast" role="status"></div>';bindCommon()}
 function dashboard(){layout('<h1>JARAN PRIVATE SCHOOL</h1><div class="dash-menu">'+menus.filter(m=>m[0]!=='dashboard').map(m=>'<button data-page="'+m[0]+'"><i>'+m[2]+'</i>'+m[1]+'<span>›</span></button>').join('')+'</div>','Dashboard')}
 function classesPage(){
- const cards=data.classes.map(c=>'<article class="class-card"><div class="class-top"><div><h2>'+esc(c.name.toUpperCase())+'</h2><small>'+esc(c.start||'—')+' to '+esc(c.end||'—')+'　 Incharge: '+esc(c.teacher||'—')+'</small></div><div class="counts"><b>♟ '+c.students.length+'</b></div></div><div class="class-actions"><button data-students="'+c.id+'"><i>♟</i>Students</button><button data-attendance="'+c.id+'"><i>◒</i>Attendance</button><button data-class-report="'+c.id+'"><i>▥</i>Reports</button><button data-more="'+c.id+'"><i>⋮</i>More...</button></div>'+(menuClass===c.id?'<div class="more-menu"><button data-copy="'+c.id+'">▢　Copy</button><button data-edit-class="'+c.id+'">✎　Edit</button><button data-delete-class="'+c.id+'">▣　Delete</button></div>':'')+'</article>').join('');
- layout('<div class="toolbar"><span class="count-chip">▣　'+data.classes.length+'</span><button class="teal-btn" data-export-students>Download Students (.xlsx)</button><button class="teal-btn" data-add-class>＋ Add New Class</button></div><div class="cards">'+(cards||'<div class="empty-state">No classes have been created yet.<br><button class="teal-btn" data-add-class>＋ Add New Class</button></div>')+'</div>','Dashboard : Classes');
+ const cards=data.classes.map(c=>'<article class="class-card"><div class="class-top"><div><h2>'+esc(c.name.toUpperCase())+'</h2><small>'+esc(c.start||'—')+' to '+esc(c.end||'—')+'　 Incharge: '+esc(c.teacher||'—')+'</small></div><div class="counts"><b>♟ '+esc(c.students.length)+'</b></div></div><div class="class-actions"><button data-students="'+esc(c.id)+'"><i>♟</i>Students</button><button data-attendance="'+esc(c.id)+'"><i>◒</i>Attendance</button><button data-class-report="'+esc(c.id)+'"><i>▥</i>Reports</button><button data-more="'+esc(c.id)+'"><i>⋮</i>More...</button></div>'+(menuClass===c.id?'<div class="more-menu"><button data-copy="'+esc(c.id)+'">▢　Copy</button><button data-edit-class="'+esc(c.id)+'">✎　Edit</button><button data-delete-class="'+esc(c.id)+'">▣　Delete</button></div>':'')+'</article>').join('');
+ layout('<div class="toolbar"><span class="count-chip">▣　'+esc(data.classes.length)+'</span><button class="teal-btn" data-export-students>Download Students (.xlsx)</button><button class="teal-btn" data-add-class>＋ Add New Class</button></div><div class="cards">'+(cards||'<div class="empty-state">No classes have been created yet.<br><button class="teal-btn" data-add-class>＋ Add New Class</button></div>')+'</div>','Dashboard : Classes');
 }
 function studentsPage(id:string){
  const c=cls(id);if(!c){go('classes');return}
- const rows=c.students.filter(s=>s.name.toLowerCase().includes(filterText.toLowerCase())).map((s,i)=>'<article class="student-card"><div class="portrait">'+esc(s.name.slice(0,1).toUpperCase())+'</div><div class="student-info"><h2>'+esc(s.name.toUpperCase())+'</h2><div class="student-meta">SN: '+(i+1)+'　 Gender: '+esc(s.gender||'—')+'　 Reg: '+esc(s.reg||'—')+'<br>DOA: '+formatAttendanceDate(s.admissionDate)+'　Guardian: '+esc(s.guardianName||'—')+'　 Phone: '+esc(s.guardianPhone||'—')+'</div><div class="student-actions"><button data-student-action="profile" data-student="'+s.id+'">●<small>Profile</small></button><button data-student-action="report" data-student="'+s.id+'">▥<small>Report</small></button><button data-student-action="marks" data-student="'+s.id+'">Ⓜ<small>Marks</small></button><a href="tel:'+esc(s.phone)+'">☎<small>Call</small></a><button data-edit-student="'+s.id+'">✎<small>Edit</small></button><button data-delete-student="'+s.id+'">▣<small>Delete</small></button></div></div></article>').join('');
- layout('<div class="toolbar"><button class="count-chip">'+c.students.length+'　Students</button><input class="filter-input" id="student-filter" placeholder="⌕ Search students" value="'+esc(filterText)+'"><button class="teal-btn" data-export-students="'+id+'">Download Excel</button><button class="teal-btn" data-add-student="'+id+'">＋ Add Student</button></div><div class="cards">'+(rows||'<div class="empty-state">No students in '+esc(c.name)+' yet.<br><button class="teal-btn" data-add-student="'+id+'">＋ Add Student</button></div>')+'</div>','Class '+c.name+' : Students');
+ const rows=c.students.filter(s=>s.name.toLowerCase().includes(filterText.toLowerCase())).map((s,i)=>'<article class="student-card"><div class="portrait">'+esc(s.name.slice(0,1).toUpperCase())+'</div><div class="student-info"><h2>'+esc(s.name.toUpperCase())+'</h2><div class="student-meta">SN: '+esc(i+1)+'　 Gender: '+esc(s.gender||'—')+'　 Reg: '+esc(s.reg||'—')+'<br>DOA: '+formatAttendanceDate(s.admissionDate)+'　Guardian: '+esc(s.guardianName||'—')+'　 Phone: '+esc(s.guardianPhone||'—')+'</div><div class="student-actions"><button data-student-action="profile" data-student="'+esc(s.id)+'">●<small>Profile</small></button><button data-student-action="report" data-student="'+esc(s.id)+'">▥<small>Report</small></button><button data-student-action="marks" data-student="'+esc(s.id)+'">Ⓜ<small>Marks</small></button><a href="tel:'+esc(s.phone)+'">☎<small>Call</small></a><button data-edit-student="'+esc(s.id)+'">✎<small>Edit</small></button><button data-delete-student="'+esc(s.id)+'">▣<small>Delete</small></button></div></div></article>').join('');
+ layout('<div class="toolbar"><button class="count-chip">'+esc(c.students.length)+'　Students</button><input class="filter-input" id="student-filter" placeholder="⌕ Search students" value="'+esc(filterText)+'"><button class="teal-btn" data-export-students="'+esc(id)+'">Download Excel</button><button class="teal-btn" data-add-student="'+esc(id)+'">＋ Add Student</button></div><div class="cards">'+(rows||'<div class="empty-state">No students in '+esc(c.name)+' yet.<br><button class="teal-btn" data-add-student="'+esc(id)+'">＋ Add Student</button></div>')+'</div>','Class '+c.name+' : Students');
 }
 function financial(){
  const c=cls(selectedClass);
- if(!c){layout('<h1>Financial</h1><p class="hint">Select a class to view its students and mark fee payments.</p><div class="cards">'+(data.classes.length?data.classes.map(x=>'<button class="financial-class" data-fin-class="'+x.id+'"><b>'+esc(x.name.toUpperCase())+'</b><span>'+x.students.length+' students　›</span></button>').join(''):'<div class="empty-state">No classes have been created yet.<br><button class="teal-btn" data-page="classes">Go to Classes</button></div>')+'</div>','Dashboard : Financial');return}
- const rows=c.students.map(s=>'<article class="paid-row"><span class="student-avatar">'+esc(s.name.slice(0,1).toUpperCase())+'</span><div class="paid-name"><b>'+esc(s.name)+'</b><small>'+esc(s.gender||c.name)+'</small></div>'+(s.paid?'<span class="paid-badge">PAID</span>':'<button class="teal-btn mark-paid" data-paid="'+s.id+'">＋ Mark Paid</button>')+'</article>').join('');
- layout('<button class="link-back" data-fin-back>‹ All classes</button><div class="fin-heading"><h1>'+esc(c.name.toUpperCase())+'</h1><button class="teal-btn" data-add-student="'+c.id+'">＋ Add member</button></div><p class="hint">Class members · '+c.students.length+' students</p><div class="cards">'+(rows||'<div class="empty-state">No students in this class yet.<br><button class="teal-btn" data-add-student="'+c.id+'">＋ Add member</button></div>')+'</div>','Dashboard : Financial : '+c.name);
+ if(!c){layout('<h1>Financial</h1><p class="hint">Select a class to view its students and mark fee payments.</p><div class="cards">'+(data.classes.length?data.classes.map(x=>'<button class="financial-class" data-fin-class="'+esc(x.id)+'"><b>'+esc(x.name.toUpperCase())+'</b><span>'+esc(x.students.length)+' students　›</span></button>').join(''):'<div class="empty-state">No classes have been created yet.<br><button class="teal-btn" data-page="classes">Go to Classes</button></div>')+'</div>','Dashboard : Financial');return}
+ const rows=c.students.map(s=>'<article class="paid-row"><span class="student-avatar">'+esc(s.name.slice(0,1).toUpperCase())+'</span><div class="paid-name"><b>'+esc(s.name)+'</b><small>'+esc(s.gender||c.name)+'</small></div>'+(s.paid?'<span class="paid-badge">PAID</span>':'<button class="teal-btn mark-paid" data-paid="'+esc(s.id)+'">＋ Mark Paid</button>')+'</article>').join('');
+ layout('<button class="link-back" data-fin-back>‹ All classes</button><div class="fin-heading"><h1>'+esc(c.name.toUpperCase())+'</h1><button class="teal-btn" data-add-student="'+esc(c.id)+'">＋ Add member</button></div><p class="hint">Class members · '+esc(c.students.length)+' students</p><div class="cards">'+(rows||'<div class="empty-state">No students in this class yet.<br><button class="teal-btn" data-add-student="'+esc(c.id)+'">＋ Add member</button></div>')+'</div>','Dashboard : Financial : '+c.name);
 }
 function formatAttendanceDate(value?:string){
- if(!value)return '—';
+ if(!value||!isDate(value)||!value)return '—';
  const [year,month,day]=value.split('-');
- return year&&month&&day?day+'-'+month+'-'+year:'—';
+ return esc(day+'-'+month+'-'+year);
 }
 function openAttendance(classId:string,session?:Attendance,copy=false){
  const c=cls(classId);if(!c)return;
@@ -77,37 +157,37 @@ function syncAttendanceDraft(){
  attendanceStudentSort=app.querySelector<HTMLSelectElement>('#attendance-student-sort')?.value||attendanceStudentSort;
 }
 function attendancePage(id:string){
- const c=cls(id);if(!c){layout('<h1>Attendance Reports</h1><div class="cards">'+data.classes.map(x=>'<button class="financial-class" data-attendance="'+x.id+'"><b>'+esc(x.name)+'</b><span>'+x.students.length+' students　›</span></button>').join('')+'</div>','Dashboard : Attendance');return}
+ const c=cls(id); if(!c){layout('<h1>Attendance Reports</h1><div class="cards">'+data.classes.map(x=>'<button class="financial-class" data-attendance="'+esc(x.id)+'"><b>'+esc(x.name)+'</b><span>'+esc(x.students.length)+' students　›</span></button>').join('')+'</div>','Dashboard : Attendance');return}
  const sessions=[...(data.attendance[id]||[])].sort((a,b)=>attendanceDirection==='DESC'?b.date.localeCompare(a.date)||b.lecture-a.lecture:a.date.localeCompare(b.date)||a.lecture-b.lecture);
  const cards=sessions.map(s=>{
   const attended=c.students.filter(student=>s.marks[student.id]==='Present'||s.marks[student.id]==='Late').length;
-  return '<article class="attendance-session-card"><div class="attendance-session-date"><b>'+formatAttendanceDate(s.date)+'</b><small>Lec: '+s.lecture+'　 Att: '+attended+' / '+c.students.length+'</small></div><div class="attendance-session-actions"><button data-session-report="'+s.id+'"><i>▥</i><small>Report</small></button><button data-session-copy="'+s.id+'"><i>▢</i><small>Copy</small></button><button data-session-edit="'+s.id+'"><i>✎</i><small>Edit</small></button><button data-session-delete="'+s.id+'"><i>▣</i><small>Delete</small></button></div></article>';
+  return '<article class="attendance-session-card"><div class="attendance-session-date"><b>'+formatAttendanceDate(s.date)+'</b><small>Lec: '+esc(safeLectureValue(s.lecture))+'　 Att: '+esc(attended)+' / '+esc(c.students.length)+'</small></div><div class="attendance-session-actions"><button data-session-report="'+esc(s.id)+'"><i>▥</i><small>Report</small></button><button data-session-copy="'+esc(s.id)+'"><i>▢</i><small>Copy</small></button><button data-session-edit="'+esc(s.id)+'"><i>✎</i><small>Edit</small></button><button data-session-delete="'+esc(s.id)+'"><i>▣</i><small>Delete</small></button></div></article>';
  }).join('');
- layout('<div class="attendance-list-toolbar"><span class="count-chip">♟　'+sessions.length+'</span><select id="attendance-direction"><option value="DESC" '+(attendanceDirection==='DESC'?'selected':'')+'>DESC</option><option value="ASC" '+(attendanceDirection==='ASC'?'selected':'')+'>ASC</option></select><button class="teal-btn" data-add-attendance="'+id+'">＋ Add Att</button></div><div class="attendance-history">'+(cards||'<div class="empty-state">No attendance records yet.<br><button class="teal-btn" data-add-attendance="'+id+'">＋ Add Att</button></div>')+'</div>','Class '+c.name+' : Attendance');
+ layout('<div class="attendance-list-toolbar"><span class="count-chip">♟　'+esc(sessions.length)+'</span><select id="attendance-direction"><option value="DESC" '+(attendanceDirection==='DESC'?'selected':'')+'>DESC</option><option value="ASC" '+(attendanceDirection==='ASC'?'selected':'')+'>ASC</option></select><button class="teal-btn" data-add-attendance="'+esc(id)+'">＋ Add Att</button></div><div class="attendance-history">'+(cards||'<div class="empty-state">No attendance records yet.<br><button class="teal-btn" data-add-attendance="'+esc(id)+'">＋ Add Att</button></div>')+'</div>','Class '+c.name+' : Attendance');
 }
 function takeAttendancePage(id:string){
  const c=cls(id);if(!c){attendanceMode='list';go('classes');return}
  const students=[...c.students].sort((a,b)=>attendanceStudentSort==='Registration Number'?a.reg.localeCompare(b.reg,undefined,{numeric:true}):a.name.localeCompare(b.name));
  const rows=students.map(s=>{
-  const status=attendanceDraftMarks[s.id]||'Absent';
+  const status=safeAttendanceStatus(attendanceDraftMarks[s.id]);
   const letter=status==='Present'?'P':status==='Late'?'L':'A';
-  return '<article class="attendance-entry-row status-'+status.toLowerCase()+'"><span class="student-avatar">'+esc(s.name.slice(0,1).toUpperCase())+'</span><div class="attendance-student-info"><b>'+esc(s.name)+'</b><small>SN: '+(c.students.indexOf(s)+1)+'　 REG: '+esc(s.reg||'—')+'<br>GEN: '+esc(s.gender||'—')+'　 DOA: '+formatAttendanceDate(s.admissionDate)+'</small></div><button class="attendance-entry-status" data-cycle-mark="'+s.id+'" aria-label="Change '+esc(s.name)+' attendance from '+status+'"><b>'+letter+'</b><small>'+status.toUpperCase()+'</small></button></article>';
+  return '<article class="attendance-entry-row status-'+status.toLowerCase()+'"><span class="student-avatar">'+esc(s.name.slice(0,1).toUpperCase())+'</span><div class="attendance-student-info"><b>'+esc(s.name)+'</b><small>SN: '+esc(c.students.indexOf(s)+1)+'　 REG: '+esc(s.reg||'—')+'<br>GEN: '+esc(s.gender||'—')+'　 DOA: '+formatAttendanceDate(s.admissionDate)+'</small></div><button class="attendance-entry-status" data-cycle-mark="'+esc(s.id)+'" aria-label="Change '+esc(s.name)+' attendance from '+status+'"><b>'+letter+'</b><small>'+status.toUpperCase()+'</small></button></article>';
  }).join('');
- layout('<div class="attendance-entry-controls"><label>Date<input id="attendance-date" type="date" value="'+attendanceDraftDate+'"></label><label>LEC<input id="attendance-lecture" type="number" min="1" value="'+attendanceDraftLecture+'"></label><button class="attendance-mark-all" data-mark-all="Absent" title="Mark all absent">A</button><label>Sort<select id="attendance-student-sort"><option '+(attendanceStudentSort==='Name'?'selected':'')+'>Name</option><option '+(attendanceStudentSort==='Registration Number'?'selected':'')+'>Registration Number</option></select></label><button class="teal-btn" data-save-att>▣ Save</button><label>LTYPE<select disabled><option>REGULAR</option></select></label><input id="attendance-remarks" class="attendance-remarks" placeholder="Enter Remarks if any..." value="'+esc(attendanceDraftRemarks)+'"></div><div class="attendance-entry-list">'+(rows||'<div class="empty-state">Add students to this class first.</div>')+'</div>','Class '+c.name+' : Attendance : Take Attendance');
+ layout('<div class="attendance-entry-controls"><label>Date<input id="attendance-date" type="date" value="'+esc(safeDateValue(attendanceDraftDate))+'"></label><label>LEC<input id="attendance-lecture" type="number" min="1" value="'+esc(safeLectureValue(attendanceDraftLecture))+'"></label><button class="attendance-mark-all" data-mark-all="Absent" title="Mark all absent">A</button><label>Sort<select id="attendance-student-sort"><option '+(attendanceStudentSort==='Name'?'selected':'')+'>Name</option><option '+(attendanceStudentSort==='Registration Number'?'selected':'')+'>Registration Number</option></select></label><button class="teal-btn" data-save-att>▣ Save</button><label>LTYPE<select disabled><option>REGULAR</option></select></label><input id="attendance-remarks" class="attendance-remarks" placeholder="Enter Remarks if any..." value="'+esc(attendanceDraftRemarks)+'"></div><div class="attendance-entry-list">'+(rows||'<div class="empty-state">Add students to this class first.</div>')+'</div>','Class '+c.name+' : Attendance : Take Attendance');
 }
 function reportsPage(){
  const c=cls(reportClass);
- if(!c){layout('<h1>Class Reports</h1><div class="cards">'+(data.classes.map(x=>'<button class="financial-class" data-report-class="'+x.id+'"><b>'+esc(x.name)+'</b><span>Generate report　›</span></button>').join('')||'<div class="empty-state">Create a class before generating reports.</div>')+'</div>','Dashboard : Class Reports');return}
+ if(!c){layout('<h1>Class Reports</h1><div class="cards">'+(data.classes.map(x=>'<button class="financial-class" data-report-class="'+esc(x.id)+'"><b>'+esc(x.name)+'</b><span>Generate report　›</span></button>').join('')||'<div class="empty-state">Create a class before generating reports.</div>')+'</div>','Dashboard : Class Reports');return}
  const sessions=attendanceDays(c.id,reportFrom,reportTo);
  const filtered=sortReportStudents(c.students.filter(s=>{
   const percent=attendancePercent(s,sessions);
   return percent===null?reportMin===0:percent>=reportMin&&percent<=reportMax
  }),sessions);
- layout('<button class="link-back" data-report-back>‹ Classes</button><h1>Generate Reports</h1><div class="form-panel report-form"><label>Class Name<input disabled value="'+esc(c.name)+'"></label><label>From Date<input id="report-from" type="date" value="'+reportFrom+'" required></label><label>To Date<input id="report-to" type="date" value="'+reportTo+'" required></label><label>From Att %<input id="report-min" type="number" min="0" max="100" value="'+reportMin+'"></label><label>To Att %<input id="report-max" type="number" min="0" max="100" value="'+reportMax+'"></label><fieldset style="border:0;margin:12px 0;padding:0"><legend>Sort students by</legend><label style="display:inline-flex;justify-content:flex-start;gap:6px;margin-right:12px"><input style="width:auto" type="checkbox" name="report-order" value="Name" '+(reportOrder==='Name'?'checked':'')+'> Name</label><label style="display:inline-flex;justify-content:flex-start;gap:6px;margin-right:12px"><input style="width:auto" type="checkbox" name="report-order" value="Registration Number" '+(reportOrder==='Registration Number'?'checked':'')+'> Registration Number</label><label style="display:inline-flex;justify-content:flex-start;gap:6px"><input style="width:auto" type="checkbox" name="report-order" value="Attendance %" '+(reportOrder==='Attendance %'?'checked':'')+'> Attendance %</label></fieldset><label>Order<select id="report-direction"><option '+(reportDirection==='Ascending'?'selected':'')+'>Ascending</option><option '+(reportDirection==='Descending'?'selected':'')+'>Descending</option></select></label><div class="report-buttons"><button class="teal-btn" data-generate="register">DOWNLOAD ATTENDANCE REGISTER (.XLSX)</button><button class="teal-btn" data-generate="report">DOWNLOAD SUMMARY (.XLSX)</button></div><small class="warning">Late counts as half a day. Days without a saved attendance register are excluded.</small></div><div id="report-results">'+reportResults(c,filtered,sessions)+'</div>','Class '+c.name+' : Generate Report');
+ layout('<button class="link-back" data-report-back>‹ Classes</button><h1>Generate Reports</h1><div class="form-panel report-form"><label>Class Name<input disabled value="'+esc(c.name)+'"></label><label>From Date<input id="report-from" type="date" value="'+esc(safeDateValue(reportFrom))+'" required></label><label>To Date<input id="report-to" type="date" value="'+esc(safeDateValue(reportTo))+'" required></label><label>From Att %<input id="report-min" type="number" min="0" max="100" value="'+esc(reportMin)+'"></label><label>To Att %<input id="report-max" type="number" min="0" max="100" value="'+esc(reportMax)+'"></label><fieldset style="border:0;margin:12px 0;padding:0"><legend>Sort students by</legend><label style="display:inline-flex;justify-content:flex-start;gap:6px;margin-right:12px"><input style="width:auto" type="checkbox" name="report-order" value="Name" '+(reportOrder==='Name'?'checked':'')+'> Name</label><label style="display:inline-flex;justify-content:flex-start;gap:6px;margin-right:12px"><input style="width:auto" type="checkbox" name="report-order" value="Registration Number" '+(reportOrder==='Registration Number'?'checked':'')+'> Registration Number</label><label style="display:inline-flex;justify-content:flex-start;gap:6px"><input style="width:auto" type="checkbox" name="report-order" value="Attendance %" '+(reportOrder==='Attendance %'?'checked':'')+'> Attendance %</label></fieldset><label>Order<select id="report-direction"><option '+(reportDirection==='Ascending'?'selected':'')+'>Ascending</option><option '+(reportDirection==='Descending'?'selected':'')+'>Descending</option></select></label><div class="report-buttons"><button class="teal-btn" data-generate="register">DOWNLOAD ATTENDANCE REGISTER (.XLSX)</button><button class="teal-btn" data-generate="report">DOWNLOAD SUMMARY (.XLSX)</button></div><small class="warning">Late counts as half a day. Days without a saved attendance register are excluded.</small></div><div id="report-results">'+reportResults(c,filtered,sessions)+'</div>','Class '+c.name+' : Generate Report');
 }
 function reportResults(c:SchoolClass,students:Student[],sessions:Attendance[]){
  if(!document.querySelector('#report-results')&&!location.hash.includes('reports'))return '';
- return '<div class="report-result"><h2>'+esc(c.name)+' — Attendance report</h2><p>'+students.length+' students · '+sessions.length+' recorded days</p><div class="cards">'+students.map(s=>'<div class="att-row"><b>'+esc(s.reg||'—')+'　'+esc(s.name)+'</b><span>'+ (attendancePercent(s,sessions)===null?'No data':attendancePercent(s,sessions)+'%')+'</span></div>').join('')+'</div></div>';
+ return '<div class="report-result"><h2>'+esc(c.name)+' — Attendance report</h2><p>'+esc(students.length)+' students · '+esc(sessions.length)+' recorded days</p><div class="cards">'+students.map(s=>'<div class="att-row"><b>'+esc(s.reg||'—')+'　'+esc(s.name)+'</b><span>'+ (attendancePercent(s,sessions)===null?'No data':esc(attendancePercent(s,sessions))+'%')+'</span></div>').join('')+'</div></div>';
 }
 function attendanceDays(classId:string,from:string,to:string){
  const byDate=new Map<string,Attendance>();
@@ -130,18 +210,18 @@ function sortReportStudents(students:Student[],sessions:Attendance[]){
  });
  return reportDirection==='Ascending'?sorted:sorted.reverse();
 }
-function backup(){layout('<h1>Backup / Restore Database</h1><div class="backup-box"><h2>To Backup the Database:</h2><ol><li>Click on Backup Database Button</li><li>Choose a location on your device to save the database.</li><li>Keep the backup file somewhere safe.</li></ol><h2>To Restore the Database:</h2><ol><li>Click on Restore Database Button</li><li>Select a valid backup file.</li></ol><strong class="danger-text">Be careful, restoring will overwrite your existing database.</strong></div><div class="toolbar backup-tools"><button class="teal-btn" data-export>BACKUP DATABASE</button><button class="teal-btn" data-restore>RESTORE DATABASE</button><input type="file" id="restore-file" accept="application/json" hidden></div>','Backup / Restore Database')}
+function backup(){layout('<h1>Backup / Restore Database</h1><div class="backup-box"><h2>To Backup the Database:</h2><ol><li>Click on Backup Database Button</li><li>Choose a location on your device to save the database.</li><li>Keep the backup file somewhere safe.</li></ol><h2>To Restore the Database:</h2><ol><li>Click on Restore Database Button</li><li>Select a valid backup file.</li></ol><strong class="danger-text">Be careful, restoring will overwrite your existing database.</strong><p>This file contains student and guardian data in plain text. Keep it private and never upload it to GitHub or public groups.</p></div><div class="toolbar backup-tools"><button class="teal-btn" data-export>BACKUP DATABASE</button><button class="teal-btn" data-restore>RESTORE DATABASE</button><input type="file" id="restore-file" accept="application/json" hidden></div>','Backup / Restore Database')}
 function profile(){layout('<h1>Profile</h1><div class="form-panel"><label>Faculty name<input id="profile-name" value="'+esc(data.profile.name)+'"></label><label>School name<input id="profile-school" value="'+esc(data.profile.school)+'"></label><button class="teal-btn" data-save-profile>Save</button></div>','Profile')}
 function timetable(){layout('<h1>Time Table</h1><p class="hint">Weekly teaching schedule</p><div class="table-scroll"><table class="timetable"><tr><th>Day</th><th>Lecture 1</th><th>Lecture 2</th><th>Lecture 3</th></tr>'+['Monday','Tuesday','Wednesday','Thursday','Friday'].map(d=>'<tr><th>'+d+'</th>'+[1,2,3].map(n=>'<td><input data-timetable="'+d+'-'+n+'" value="'+esc(data.timetable.find(x=>x.startsWith(d+'-'+n+'|'))?.split('|')[1]||'')+'" placeholder="Class / subject"></td>').join('')+'</tr>').join('')+'</table><button class="teal-btn" data-save-timetable>Save Time Table</button></div>','Time Table')}
 function render(){ if(active.startsWith('students:')){selectedClass=active.split(':')[1];return studentsPage(selectedClass)}if(active.startsWith('attendance:')){selectedClass=active.split(':')[1];return attendanceMode==='take'?takeAttendancePage(selectedClass):attendancePage(selectedClass)}if(active==='dashboard')return dashboard();if(active==='classes')return classesPage();if(active==='financial')return financial();if(active==='attendance')return attendancePage('');if(active==='reports')return reportsPage();if(active==='backup')return backup();if(active==='profile')return profile();if(active==='timetable')return timetable();return dashboard()}
 function toast(s:string){const t=document.querySelector('#toast');if(t){t.textContent=s;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}}
 function formDialog(title:string,fields:{name:string;label:string;value?:string;type?:string;options?:string[];required?:boolean;readOnly?:boolean;uppercase?:boolean}[],submit:(v:Record<string,string>)=>void){
- const dlg=document.createElement('dialog');dlg.className='editor-dialog';dlg.innerHTML='<form method="dialog" class="editor-form"><div class="dialog-head"><h2>'+esc(title)+'</h2><button class="close" type="button" aria-label="Cancel">×</button></div>'+fields.map(f=>'<label>'+esc(f.label)+(f.options?'<select name="'+f.name+'">'+f.options.map(o=>'<option '+(o===f.value?'selected':'')+'>'+esc(o)+'</option>').join('')+'</select>':'<input style="'+(f.uppercase?'text-transform:uppercase':'')+'" name="'+f.name+'" type="'+(f.type||'text')+'" value="'+esc(f.value||'')+'" '+(f.required===false?'':'required')+' '+(f.readOnly?'readonly':'')+'>')+'</label>').join('')+'<button class="teal-btn" value="save">SAVE</button></form>';
+ const dlg=document.createElement('dialog');dlg.className='editor-dialog';dlg.innerHTML='<form method="dialog" class="editor-form"><div class="dialog-head"><h2>'+esc(title)+'</h2><button class="close" type="button" aria-label="Cancel">×</button></div>'+fields.map(f=>'<label>'+esc(f.label)+(f.options?'<select name="'+esc(f.name)+'">'+f.options.map(o=>'<option '+(o===f.value?'selected':'')+'>'+esc(o)+'</option>').join('')+'</select>':'<input style="'+(f.uppercase?'text-transform:uppercase':'')+'" name="'+esc(f.name)+'" type="'+esc(f.type||'text')+'" value="'+esc(f.value||'')+'" '+(f.required===false?'':'required')+' '+(f.readOnly?'readonly':'')+'>')+'</label>').join('')+'<button class="teal-btn" value="save">SAVE</button></form>';
  document.body.append(dlg);dlg.showModal();dlg.querySelector<HTMLButtonElement>('.close')!.addEventListener('click',()=>dlg.close());dlg.querySelector('form')!.addEventListener('submit',e=>{e.preventDefault();const fd=new FormData(dlg.querySelector('form')!);const v:Record<string,string>={};fd.forEach((x,k)=>v[k]=String(x));submit(v);dlg.close()});dlg.addEventListener('close',()=>dlg.remove());
 }
 function addClass(existing?:SchoolClass,duplicate=false){formDialog(existing&&!duplicate?'Edit Class':'Add New Class',[{name:'name',label:'New Class Name',value:duplicate?'':existing?.name},{name:'teacher',label:'Class Teacher',value:existing?.teacher,required:false},{name:'start',label:'Start Date',value:existing?.start,type:'date'},{name:'end',label:'End Date',value:existing?.end,type:'date'}],v=>{if(existing&&!duplicate)Object.assign(existing,{name:v.name,teacher:v.teacher,start:v.start,end:v.end});else data.classes.push({id:crypto.randomUUID(),name:v.name,teacher:v.teacher,start:v.start,end:v.end,students:[]});persist();render();toast('Class saved.')})}
 function nextRegistrationNumber(c:SchoolClass){const highest=c.students.reduce((max,s)=>Math.max(max,Number(s.reg?.match(/(\d+)$/)?.[1]||0)),c.students.length);return 'REG-'+String(highest+1).padStart(3,'0')}
-function addStudent(classId:string,s?:Student){const c=cls(classId);if(!c)return;formDialog(s?'Edit Student':'Add Student',[{name:'name',label:'Student Name',value:s?.name,uppercase:true},{name:'gender',label:'Gender',value:s?.gender||'Female',options:['Female','Male','Other']},{name:'reg',label:'Registration Number',value:s?.reg||nextRegistrationNumber(c),readOnly:true,required:false},{name:'admissionDate',label:'Date of Admission',value:s?.admissionDate||(s?'':attendanceDate),type:'date',required:false},{name:'guardianName',label:'Parent / Guardian Name',value:s?.guardianName,uppercase:true,required:false},{name:'guardianPhone',label:'Parent / Guardian Phone',value:s?.guardianPhone,type:'tel',required:false},{name:'phone',label:'Student Phone',value:s?.phone,type:'tel',required:false}],v=>{v.name=v.name.trim().toUpperCase();v.guardianName=v.guardianName.trim().toUpperCase();if(s)Object.assign(s,v);else c.students.push({id:crypto.randomUUID(),...v,paid:false});persist();render();toast('Student saved.')})}
+function addStudent(classId:string,s?:Student){const c=cls(classId);if(!c)return;formDialog(s?'Edit Student':'Add Student',[{name:'name',label:'Student Name',value:s?.name,uppercase:true},{name:'gender',label:'Gender',value:s?.gender||'Female',options:['Female','Male','Other']},{name:'reg',label:'Registration Number',value:s?.reg||nextRegistrationNumber(c),readOnly:true,required:false},{name:'admissionDate',label:'Date of Admission',value:s?.admissionDate||(s?'':attendanceDate),type:'date',required:false},{name:'guardianName',label:'Parent / Guardian Name',value:s?.guardianName,uppercase:true,required:false},{name:'guardianPhone',label:'Parent / Guardian Phone',value:s?.guardianPhone,type:'tel',required:false},{name:'phone',label:'Student Phone',value:s?.phone,type:'tel',required:false}],v=>{v.name=v.name.trim().toUpperCase();v.guardianName=v.guardianName.trim().toUpperCase();if(s)Object.assign(s,v);else c.students.push({id:crypto.randomUUID(),name:v.name,gender:v.gender,phone:v.phone,reg:v.reg,guardianName:v.guardianName,guardianPhone:v.guardianPhone,admissionDate:v.admissionDate,paid:false});persist();render();toast('Student saved.')})}
 function exportStudents(classId?:string){
  const classes=classId?[cls(classId)].filter((c):c is SchoolClass=>!!c):data.classes;
  const rows:(string|number|null)[][]=[['CLASS','REGISTRATION NUMBER','STUDENT NAME','GENDER','DATE OF ADMISSION','PARENT / GUARDIAN NAME','PARENT PHONE','STUDENT PHONE','FEE PAID']];
@@ -265,7 +345,19 @@ function bindCommon(){
  }));
  app.querySelectorAll<HTMLElement>('[data-export]').forEach(b=>b.onclick=()=>{const blob=new Blob([JSON.stringify({app:'Evergreen Faculty Dashboard',version:2,data},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='faculty-database-backup.json';a.click();URL.revokeObjectURL(a.href)});
  app.querySelector('[data-restore]')?.addEventListener('click',()=>app.querySelector<HTMLInputElement>('#restore-file')!.click());
- app.querySelector<HTMLInputElement>('#restore-file')?.addEventListener('change',async e=>{try{const parsed=JSON.parse(await (e.target as HTMLInputElement).files![0].text());const next=parsed.data||parsed;if(!Array.isArray(next.classes)||!next.attendance)throw Error();if(confirm('Restore will replace all current classes, students, payments, and attendance. Continue?')){data={...blank,...next};persist();go('dashboard');toast('Database restored.')}}catch{toast('Invalid backup file.')}});
+ app.querySelector<HTMLInputElement>('#restore-file')?.addEventListener('change',async e=>{
+  const input=e.target as HTMLInputElement,file=input.files?.[0];
+  if(!file||file.size>5*1024*1024){toast('Invalid backup file.');input.value='';return}
+  let parsed:unknown;
+  try{parsed=JSON.parse(await file.text()) as unknown}catch{toast('Invalid backup file.');input.value='';return}
+  const candidate=isPlainObject(parsed)&&'data' in parsed?parsed.data:parsed;
+  const next=sanitizeStore(candidate);
+  if(!next){toast('Invalid backup file.');input.value='';return}
+  if(confirm('Restore will replace all current classes, students, payments, and attendance. Continue?')){
+   data=next;persist();go('dashboard');toast('Database restored.');
+  }
+  input.value='';
+ });
  app.querySelector('[data-save-profile]')?.addEventListener('click',()=>{data.profile={name:app.querySelector<HTMLInputElement>('#profile-name')!.value,school:app.querySelector<HTMLInputElement>('#profile-school')!.value};persist();toast('Profile saved.')});
  app.querySelector('[data-save-timetable]')?.addEventListener('click',()=>{data.timetable=Array.from(app.querySelectorAll<HTMLInputElement>('[data-timetable]')).map(x=>x.dataset.timetable+'|'+x.value);persist();toast('Time table saved.')});
  app.querySelectorAll<HTMLElement>('[data-student-action]').forEach(b=>b.onclick=()=>toast(b.dataset.studentAction==='call'?'':b.dataset.studentAction==='marks'?'Marks module is ready for entries.':b.dataset.studentAction==='report'?'Use Class Reports to generate attendance records.':'Student record stored locally.'));
