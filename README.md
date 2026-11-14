@@ -14,8 +14,14 @@ The included workflow builds the project and publishes its dist folder on every 
 ## Run locally
 Install Node.js, then run:
 ```sh
-npm install
+npm ci
 npm run dev
 ```
 
 School records are stored in the current browser only and do not sync between devices. Use Backup / Restore to transfer them.
+
+## Security notes
+- School data is stored unencrypted in this browser only; there is no login.
+- Do not use the app on shared computers.
+- Backups are plain-text files containing student and guardian data; keep them private.
+- Enable two-factor authentication (2FA) on the GitHub account.
