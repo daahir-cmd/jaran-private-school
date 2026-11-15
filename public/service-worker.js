@@ -9,7 +9,7 @@ self.addEventListener('install', event => {
       new URL('./', scope).href,
       indexUrl,
       new URL('manifest.webmanifest', scope).href,
-      new URL('icons/icon.svg', scope).href
+      new URL('jaran-logo.jpeg', scope).href
     ]);
 
     const index = await cache.match(indexUrl);
