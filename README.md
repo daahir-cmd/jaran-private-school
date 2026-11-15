@@ -20,6 +20,9 @@ npm run dev
 
 School records are stored in the current browser only and do not sync between devices. Use Backup / Restore to transfer them.
 
+## Use offline
+Open the app once while online so the browser can save the app files. After that, you can add and edit records, mark attendance, and download Excel reports or a JSON backup without internet on that same browser and device. Updates require an internet connection, and data remains stored only in that browser.
+
 ## Security notes
 - School data is stored unencrypted in this browser only; there is no login.
 - Do not use the app on shared computers.
