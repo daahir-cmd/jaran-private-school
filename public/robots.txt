@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://daahir-cmd.github.io/jaran-private-school/sitemap.xml
