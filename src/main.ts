@@ -343,7 +343,7 @@ function bindCommon(){
   render();
   toast('Excel report downloaded.');
  }));
- app.querySelectorAll<HTMLElement>('[data-export]').forEach(b=>b.onclick=()=>{const blob=new Blob([JSON.stringify({app:'Evergreen Faculty Dashboard',version:2,data},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='faculty-database-backup.json';a.click();URL.revokeObjectURL(a.href)});
+ app.querySelectorAll<HTMLElement>('[data-export]').forEach(b=>b.onclick=()=>{const blob=new Blob([JSON.stringify({app:'Evergreen Faculty Dashboard',version:2,data},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='faculty-database-backup.json';document.body.append(a);a.click();a.remove();window.setTimeout(()=>URL.revokeObjectURL(url),1000)});
  app.querySelector('[data-restore]')?.addEventListener('click',()=>app.querySelector<HTMLInputElement>('#restore-file')!.click());
  app.querySelector<HTMLInputElement>('#restore-file')?.addEventListener('change',async e=>{
   const input=e.target as HTMLInputElement,file=input.files?.[0];
@@ -365,3 +365,10 @@ function bindCommon(){
 function renderFinancialKeep(){active='financial';render()}
 window.addEventListener('hashchange',()=>{active=location.hash.slice(1)||'dashboard';render()});
 render();
+if('serviceWorker' in navigator){
+ window.addEventListener('load',()=>{
+  navigator.serviceWorker.register('./service-worker.js').catch(error=>{
+   console.error('Unable to register offline support.',error);
+  });
+ });
+}
