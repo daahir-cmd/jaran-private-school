@@ -931,7 +931,9 @@ main,
  .auth-card h1{text-align:center;color:#075c4f;font-size:21px;margin:10px 0}
  .auth-card p{color:#73827e;font-size:13px;line-height:1.55}
  .auth-card label{display:grid;gap:6px;margin:15px 0;color:#52635d;font-weight:700;font-size:13px}
- .auth-card input{width:100%;border:1px solid #ccd8d4;border-radius:5px;padding:12px}
+ .auth-card input{width:100%;border:1px solid #ccd8d4;border-radius:5px;padding:12px;background-color:#fff;color:#17211f;caret-color:#17211f;color-scheme:light}
+ .auth-card input::placeholder{color:#687873;opacity:1}
+ .auth-card input:focus{border-color:#0f766e;outline:2px solid #0f766e33;outline-offset:1px}
  .auth-card button{width:100%;margin-top:8px}
  .auth-error{color:#b42318!important;min-height:18px}
  .top-logout{border:0;border-radius:4px;background:#fff;color:#075c4f;padding:8px 10px;font-weight:700}
