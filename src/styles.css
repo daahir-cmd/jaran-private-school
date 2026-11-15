@@ -945,3 +945,12 @@ main,
  .temporary-password{margin-top:14px;padding:12px;border:1px solid #e2c36c;border-radius:4px;background:#fff9e6;color:#604c08;font-weight:700;overflow-wrap:anywhere}
  .account-form>button{margin-top:12px}
 
+/* Keep login text readable above the app-wide white-text theme. */
+#app .auth-card h1{color:#075c4f}
+#app .auth-card p{color:#52635d}
+#app .auth-card label{color:#34433f}
+#app .auth-card input{background-color:#fff!important;color:#17211f!important;-webkit-text-fill-color:#17211f!important;caret-color:#17211f;color-scheme:light}
+#app .auth-card input::placeholder{color:#687873!important;opacity:1}
+#app .auth-card button{color:#fff}
+#app .auth-card .auth-error{color:#b42318!important}
+
