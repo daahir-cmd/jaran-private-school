@@ -108,7 +108,7 @@ const persist=()=>localStorage.setItem(KEY,JSON.stringify(data));
 const cls=(id:string)=>data.classes.find(c=>c.id===id);
 const go=(page:string)=>{active=page;location.hash=page;render()};
 const top=(crumb:string)=>'<header class="top"><button class="back" data-back>‹</button><span>'+esc(crumb)+'</span><button class="top-profile" data-page="profile">●</button></header>';
-function menu(){return '<aside class="menu"><b class="menu-brand">JARAN PRIVATE SCHOOL</b></aside>'}
+function menu(){return '<aside class="menu"><img class="school-logo" src="./jaran-logo.jpeg" alt="Jaran School logo"><b class="menu-brand">JARAN PRIVATE SCHOOL</b></aside>'}
 function layout(body:string,crumb:string){app.innerHTML=menu()+'<main>'+top(crumb)+'<section class="screen">'+body+'</section></main><div id="toast" role="status"></div>';bindCommon()}
 function dashboard(){layout('<h1>JARAN PRIVATE SCHOOL</h1><div class="dash-menu">'+menus.filter(m=>m[0]!=='dashboard').map(m=>'<button data-page="'+m[0]+'"><i>'+m[2]+'</i>'+m[1]+'<span>›</span></button>').join('')+'</div>','Dashboard')}
 function classesPage(){
