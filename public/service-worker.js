@@ -9,7 +9,10 @@ self.addEventListener('install', event => {
       new URL('./', scope).href,
       indexUrl,
       new URL('manifest.webmanifest', scope).href,
-      new URL('jaran-logo.jpeg', scope).href
+      new URL('jaran-logo.jpeg', scope).href,
+      new URL('icons/icon-192.png', scope).href,
+      new URL('icons/icon-512.png', scope).href,
+      new URL('icons/apple-touch-icon.png', scope).href
     ]);
 
     const index = await cache.match(indexUrl);
