@@ -925,3 +925,21 @@ main,
   background: #36454f;
   color: #fff;
 }
+ .auth-shell{min-height:100vh;display:grid;place-items:center;padding:20px;background:#f5f8f7}
+ .auth-card{width:min(420px,100%);background:#fff;border:1px solid #e5ece9;border-radius:10px;padding:26px;box-shadow:0 12px 40px #153c3318}
+ .auth-card>img{display:block;width:74px;height:74px;object-fit:contain;margin:0 auto 12px}
+ .auth-card h1{text-align:center;color:#075c4f;font-size:21px;margin:10px 0}
+ .auth-card p{color:#73827e;font-size:13px;line-height:1.55}
+ .auth-card label{display:grid;gap:6px;margin:15px 0;color:#52635d;font-weight:700;font-size:13px}
+ .auth-card input{width:100%;border:1px solid #ccd8d4;border-radius:5px;padding:12px}
+ .auth-card button{width:100%;margin-top:8px}
+ .auth-error{color:#b42318!important;min-height:18px}
+ .top-logout{border:0;border-radius:4px;background:#fff;color:#075c4f;padding:8px 10px;font-weight:700}
+ .account-name{margin-left:auto;color:#52635d;font-size:12px}
+ .status-badge{align-self:center;border-radius:4px;padding:7px 10px;font-size:11px;font-weight:700}
+ .status-badge.status-present{background:#e5f5ec;color:#218838}
+ .status-badge.status-absent{background:#fde8e8;color:#c62828}
+ .status-badge.status-late{background:#fff3cd;color:#856404}
+ .temporary-password{margin-top:14px;padding:12px;border:1px solid #e2c36c;border-radius:4px;background:#fff9e6;color:#604c08;font-weight:700;overflow-wrap:anywhere}
+ .account-form>button{margin-top:12px}
+

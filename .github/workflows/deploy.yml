@@ -31,6 +31,9 @@ jobs:
       - name: Audit dependencies
         run: npm audit --audit-level=high
       - name: Build site
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL || 'https://jfehvdxcglhcejpmkvbr.supabase.co' }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY || 'sb_publishable_IP-9KxMrfTG35Adu8SAQrw_8SBgINeL' }}
         run: npm run build
       - name: Upload site
         uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3
@@ -46,3 +49,4 @@ jobs:
       - name: Publish site
         id: deployment
         uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
+
