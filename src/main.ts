@@ -142,13 +142,17 @@ async function initializeSession(){
  render();
 }
 function renderPasswordChange(){
- app.innerHTML='<main class="auth-shell"><form class="auth-card" id="password-form"><h1>Set a new password</h1><p>This temporary password must be replaced before you can use the school app.</p><label>New password<input name="newPassword" type="password" autocomplete="new-password" minlength="12" required></label><label>Confirm new password<input name="confirmPassword" type="password" autocomplete="new-password" minlength="12" required></label><p class="auth-error" id="auth-error" role="alert"></p><button class="teal-btn" type="submit">Save password</button></form></main>';
+ app.innerHTML='<main class="auth-shell"><form class="auth-card" id="password-form"><h1>Set a new password</h1><p>This temporary password must be replaced before you can use the school app. Choose a password you can remember; Supabase will enforce the project password rules.</p><label>New password<input name="newPassword" type="password" autocomplete="new-password" required></label><label>Confirm new password<input name="confirmPassword" type="password" autocomplete="new-password" required></label><p class="auth-error" id="auth-error" role="alert"></p><button class="teal-btn" type="submit">Save password</button></form></main>';
  app.querySelector<HTMLFormElement>('#password-form')?.addEventListener('submit',async event=>{
   event.preventDefault();
   if(!supabase)return;
   const form=event.currentTarget as HTMLFormElement;
   const values=new FormData(form);
   const password=String(values.get('newPassword')||'');
+  if(!password){
+   app.querySelector<HTMLElement>('#auth-error')!.textContent='Enter a new password.';
+   return;
+  }
   if(password!==String(values.get('confirmPassword')||'')){
    app.querySelector<HTMLElement>('#auth-error')!.textContent='The passwords do not match.';
    return;
@@ -159,7 +163,7 @@ function renderPasswordChange(){
   if(updateError){
    console.error('Unable to change the temporary password.',updateError);
    button.disabled=false;
-   app.querySelector<HTMLElement>('#auth-error')!.textContent='Unable to change the password. Use a longer password and try again.';
+   app.querySelector<HTMLElement>('#auth-error')!.textContent='Supabase rejected that password under the project security rules. Try another password.';
    return;
   }
   // The database trigger clears must_change_password only after Supabase Auth
